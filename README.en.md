@@ -4,14 +4,14 @@
 
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-0.1.0-orange.svg)](https://github.com/rainerseventeen/paper-tracker/releases)
+[![Version](https://img.shields.io/badge/version-0.2.0-orange.svg)](https://github.com/rainerseventeen/paper-tracker/releases)
 [![Last Commit](https://img.shields.io/github/last-commit/rainerseventeen/paper-tracker)](https://github.com/rainerseventeen/paper-tracker/commits)
 [![Code Size](https://img.shields.io/github/languages/code-size/rainerseventeen/paper-tracker)](https://github.com/rainerseventeen/paper-tracker)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/rainerseventeen/paper-tracker/graphs/commit-activity)
 
 **English | [中文](./README.md)**
 
-Paper Tracker is a minimal paper tracking tool. Its core goal is to query multiple paper data sources by keywords (`arXiv`, `OpenAlex`) and output structured results based on configuration, so you can continuously track new papers.
+Paper Tracker is a minimal paper tracking tool. Its core goal is to query multiple paper data sources by keywords (`arXiv`, `OpenAlex`, `PubMed`) and output structured results based on configuration, so you can continuously track new papers.
 
 **If this project helps you, please consider giving it a Star ⭐. Thank you!**
 
@@ -24,7 +24,7 @@ See the live result: [📄 Deployment Page](https://rainerseventeen.github.io/pa
 ## Implemented Features
 
 - 🔍 **Query and Filtering**:
-  - Multi-source retrieval: `arxiv` (preprints), `openalex` (journals/conferences/preprints), can be enabled together
+  - Multi-source retrieval: `arxiv` (preprints), `openalex` (journals/conferences/preprints), `pubmed` (biomedical journals), can be enabled together
   - Field-based search: `TITLE`, `ABSTRACT`, `AUTHOR`, `JOURNAL`, `CATEGORY`
   - Logical operators: `AND`, `OR`, `NOT`
   - Global `scope` support (applies to all queries)
@@ -34,8 +34,11 @@ See the live result: [📄 Deployment Page](https://rainerseventeen.github.io/pa
   |--------|-----------|:-------------------:|:-----------------:|:-------------------:|
   | `arxiv` | Preprints | Full | — | ✅ |
   | `openalex` | Journals / Conferences / Preprints | Partial | ✅ | ✅ |
+  | `pubmed` | Biomedical journals | Partial | — | ✅ |
 
   > **Note**: The `openalex` source is currently unstable and may return papers unrelated to the queried topic. This feature is still under active development. If you find a significant number of irrelevant articles in the results, it is recommended to disable the `openalex` source in your configuration.
+  >
+  > **PubMed usage tip**: PubMed is biased toward biomedicine / life sciences. If your topic is unrelated, enabling PubMed is likely to return few or no results. Setting the `NCBI_API_KEY` environment variable is recommended to raise the rate limit.
 
 - 🧲 **Fetch Strategy**: Supports fetching older papers to fill the target paper count
 
@@ -92,6 +95,7 @@ cp .env.example .env
 - [🔍 Search Logic Overview](./docs/en/architecture_search_logic.md)
 - [🔍 arXiv Query Syntax](./docs/en/source_arxiv_api_query.md)
 - [🔍 OpenAlex Query Parameters](./docs/en/source_openalex_api_query.md)
+- [🔍 PubMed Query Syntax](./docs/en/source_pubmed_api_query.md)
 
 ## Update
 
