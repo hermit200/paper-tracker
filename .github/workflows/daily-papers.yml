@@ -1,0 +1,148 @@
+name: Daily Paper Website
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    # 每天北京时间 07:45 启动
+    - cron: "45 7 * * *"
+      timezone: "Asia/Shanghai"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: paper-tracker-publish
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    # 让日志、输出文件名等也按北京时间记录
+    env:
+      TZ: Asia/Shanghai
+
+    steps:
+      # --------------------------------------------------------
+      # 1. 拉取 main 分支代码
+      # --------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # --------------------------------------------------------
+      # 2. 安装 Python 与项目
+      # --------------------------------------------------------
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Paper Tracker
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install .
+
+      # --------------------------------------------------------
+      # 3. 下载旧 gh-pages，保留 archive 历史文件
+      # --------------------------------------------------------
+      - name: Fetch previous website archive
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p previous-site
+
+          if git ls-remote --exit-code --heads \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            gh-pages >/dev/null 2>&1; then
+
+            git clone \
+              --depth 1 \
+              --branch gh-pages \
+              "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+              previous-site
+          fi
+
+      # --------------------------------------------------------
+      # 4. 检索论文、调用 DeepSeek、输出 HTML
+      # --------------------------------------------------------
+      - name: Search papers and generate report
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          NCBI_API_KEY: ${{ secrets.NCBI_API_KEY }}
+        run: |
+          paper-tracker search --config config/biology.yml
+
+      # --------------------------------------------------------
+      # 5. 保存 SQLite 去重数据库到 main
+      # --------------------------------------------------------
+      - name: Save de-duplication state
+        run: |
+          if [ ! -f database/papers.db ]; then
+            echo "Database does not exist; skip state commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -f database/papers.db
+
+          if git diff --cached --quiet; then
+            echo "No database changes."
+          else
+            git commit -m "chore: update paper tracker state"
+            git push origin HEAD:main
+          fi
+
+      # --------------------------------------------------------
+      # 6. 构建 GitHub Pages 静态网页
+      # --------------------------------------------------------
+      - name: Build static website
+        run: |
+          rm -rf site
+          mkdir -p site/archive
+
+          # 保留旧 gh-pages 分支中的历史日报
+          if [ -d previous-site/archive ]; then
+            cp -a previous-site/archive/. site/archive/
+          fi
+
+          # 找到本次生成的最新 HTML
+          latest="$(find output/html -maxdepth 1 -type f -name 'search_*.html' -print0 \
+            | xargs -0r ls -t \
+            | head -n 1)"
+
+          if [ -z "$latest" ]; then
+            echo "ERROR: no HTML report found under output/html/"
+            exit 1
+          fi
+
+          # 首页始终为最新日报
+          cp "$latest" site/index.html
+
+          # 同时归档本次日报
+          cp "$latest" "site/archive/$(basename "$latest")"
+
+          # 复制网页需要的 CSS / JS 等资源
+          if [ -d output/html/assets ]; then
+            cp -a output/html/assets site/assets
+          fi
+
+          # 让 GitHub Pages 直接作为静态网站处理
+          touch site/.nojekyll
+
+          echo "Generated site files:"
+          find site -maxdepth 2 -type f | sort
+
+      # --------------------------------------------------------
+      # 7. 发布到 gh-pages 分支
+      # --------------------------------------------------------
+      - name: Deploy to GitHub Pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./site
