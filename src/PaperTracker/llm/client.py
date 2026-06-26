@@ -150,12 +150,17 @@ class LLMApiClient:
         }
 
         payload = {
-            "model": model,
-            "messages": messages,
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-            "stream": False,
-        }
+                "model": model,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                "stream": False,
+            
+                # 强制 DeepSeek 返回合法 JSON，供程序稳定解析
+                "response_format": {
+                    "type": "json_object",
+                },
+
 
         return self._post_with_retry(
             endpoint=self.endpoint,
