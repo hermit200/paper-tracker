@@ -19,7 +19,7 @@ search:
   sources: [pubmed, arxiv]
 
   # 每个主题最多保留多少篇“新论文”
-  max_results: 5
+  max_results: 3
 
   # 每天运行一次，但检索最近 3 天。
   # 由于 SQLite 会去重，因此不会每天重复推送；
@@ -44,10 +44,7 @@ queries:
     OR:
       - antimicrobial peptide
       - antimicrobial peptides
-      - host defense peptide
-      - peptide antibiotic
-      - bacteriocin
-      - antimicrobial peptidomics
+    
     NOT:
       - review
       - systematic review
@@ -57,13 +54,10 @@ queries:
 
   - NAME: 微生物组与宏基因组
     OR:
-      - microbiome
-      - microbiota
       - metagenome
+      - metagenomic enzyme
       - metagenomic
-      - microbial community
-      - host-microbiome interaction
-      - insect microbiome
+
     NOT:
       - review
       - systematic review
@@ -77,8 +71,6 @@ queries:
       - protein design
       - enzyme engineering
       - enzyme design
-      - directed evolution
-      - metagenomic enzyme
       - protein sequence model
     NOT:
       - review
@@ -89,11 +81,6 @@ queries:
     OR:
       - bioinformatics
       - computational biology
-      - metagenomic binning
-      - genome assembly
-      - microbial genomics
-      - single-cell genomics
-      - sequence representation learning
     NOT:
       - review
       - protocol
@@ -145,7 +132,7 @@ llm:
   timeout: 60
   target_lang: Simplified Chinese
   temperature: 0.2
-  max_tokens: 900
+  max_tokens: 1600
   max_workers: 2
 
   enable_translation: true
